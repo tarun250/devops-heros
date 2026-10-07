@@ -156,3 +156,47 @@
 
 **Check CoreDNS Logs**
 ![CoreDNS logs](./screenshots/09-16-coredns-logs.png)
+
+## mini-project — Troubleshooting Challenge
+
+**Deploy the app**
+![Deploy](./screenshots/mp-01-deploy.png)
+
+**Describe + logs**
+![Describe and logs](./screenshots/mp-02-describe-logs.png)
+
+**Exec + curl inside the pod**
+![Exec curl](./screenshots/mp-03-exec-curl.png)
+
+**Service + endpoints**
+![Service endpoints](./screenshots/mp-04-service-endpoints.png)
+
+**Broken pod**
+![Broken pod](./screenshots/mp-05-broken-pod.png)
+
+1. Status: `ImagePullBackOff` (flips with `ErrImagePull`).
+2. Error: `docker.io/library/nginx:this-tag-does-not-exist: not found`.
+3. `kubectl describe pod project-broken-pod` — the Events section.
+4. The tag `this-tag-does-not-exist` doesn't exist on Docker Hub.
+5. Use a real tag (`nginx:1.27`) and recreate the pod.
+
+![Broken pod fixed](./screenshots/mp-06-broken-fixed.png)
+
+**Service selector challenge** — selector changed to `app: wrong-app`, endpoints become `<none>`. Pods are labelled `app=troubleshooting-app`, so nothing matches.
+![Selector broken](./screenshots/mp-07-selector-broken.png)
+
+Fix: re-apply `service.yaml` with the correct selector, endpoints come back.
+![Selector fixed](./screenshots/mp-08-selector-fixed.png)
+
+### README Questions
+
+1. `kubectl get` — quick status of resources (Running, Pending, restarts, age).
+2. `get` is a one-line summary; `describe` gives full detail plus Events.
+3. `kubectl logs` — see what the app printed, e.g. why it crashed.
+4. `kubectl exec` — run commands inside a running container (curl, check files, env).
+5. `CrashLoopBackOff` — container keeps starting and exiting; Kubernetes waits longer between each restart.
+6. `ImagePullBackOff` — kubelet can't pull the image (wrong name/tag, private registry, no network).
+7. `Pending` — scheduler can't place the pod: not enough CPU/memory, nodeSelector/taints, unbound PVC.
+8. No endpoints — selector doesn't match any pod labels, or matching pods aren't Ready.
+9. The Service selector must match Pod labels; matching Ready pods become its endpoints.
+10. Kubernetes DNS (CoreDNS) gives Services names like `my-svc.my-ns.svc.cluster.local`.
