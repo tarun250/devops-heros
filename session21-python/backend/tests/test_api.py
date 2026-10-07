@@ -2,8 +2,10 @@ import os
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app, startup
 
+# TestClient only fires startup events inside `with`, so create the tables here
+startup()
 client = TestClient(app)
 
 def test_health():
