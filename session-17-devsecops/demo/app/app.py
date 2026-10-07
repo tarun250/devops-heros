@@ -231,4 +231,5 @@ def server_error(e):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    # 0.0.0.0 is needed inside the container; debug only when FLASK_DEBUG=1
+    app.run(host="0.0.0.0", port=5001, debug=os.environ.get("FLASK_DEBUG") == "1")

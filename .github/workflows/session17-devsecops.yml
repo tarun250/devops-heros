@@ -1,0 +1,139 @@
+name: Session 17 - Python DevSecOps Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "session-17-devsecops/demo/**"
+      - ".github/workflows/session17-devsecops.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "session-17-devsecops/demo/**"
+  workflow_dispatch:
+
+env:
+  APP_DIR: session-17-devsecops/demo
+  IMAGE: ghcr.io/${{ github.repository_owner }}/hey-cicd
+
+defaults:
+  run:
+    working-directory: session-17-devsecops/demo
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: pytest --cov=app --cov-report=term-missing
+
+  sast:
+    name: SAST - CodeQL + Bandit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          source-root: session-17-devsecops/demo
+      - uses: github/codeql-action/analyze@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bandit (fail on HIGH)
+        run: |
+          pip install bandit
+          bandit -r app -lll
+
+  sca:
+    name: SCA - pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt
+
+  secret-scan:
+    name: Secret Scan - Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks on this app's history
+        working-directory: .
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
+            git /repo --log-opts="-- ${APP_DIR}" -v
+
+  build-scan-push:
+    name: Build, Trivy Scan, Push to GHCR
+    needs: [test, sast, sca, secret-scan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t "$IMAGE:${{ github.sha }}" .
+
+      - name: Trivy scan (security gate)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
+            image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress \
+            "$IMAGE:${{ github.sha }}"
+
+      - name: Push to GHCR
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "$IMAGE:${{ github.sha }}"
+
+  deploy:
+    name: Deploy to Kubernetes (kind)
+    needs: build-scan-push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: helm/kind-action@v1.10.0
+
+      - name: GHCR pull secret (package is private by default)
+        run: |
+          kubectl create secret docker-registry ghcr \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}"
+          kubectl patch serviceaccount default -p '{"imagePullSecrets":[{"name":"ghcr"}]}'
+
+      - name: Set image tag
+        run: sed -i "s|nensiravaliya28/hey-cicd:__IMAGE_TAG__|$IMAGE:${{ github.sha }}|" k8s/deployment.yaml
+
+      - name: Deploy
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl rollout status deployment/session17-python --timeout=120s
+
+      - name: Smoke test
+        run: |
+          kubectl port-forward service/session17-python 5001:80 &
+          sleep 3
+          curl -sf http://localhost:5001/api/status

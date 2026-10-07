@@ -1,2 +1,9 @@
 ./node_modules/
 .zip
+.venv/
+__pycache__/
+.pytest_cache/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
