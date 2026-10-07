@@ -200,3 +200,7 @@ Fix: re-apply `service.yaml` with the correct selector, endpoints come back.
 8. No endpoints — selector doesn't match any pod labels, or matching pods aren't Ready.
 9. The Service selector must match Pod labels; matching Ready pods become its endpoints.
 10. Kubernetes DNS (CoreDNS) gives Services names like `my-svc.my-ns.svc.cluster.local`.
+
+## Events vs Logs
+
+See [events-logs.md](./events-logs.md).
