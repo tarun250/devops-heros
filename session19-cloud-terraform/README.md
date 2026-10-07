@@ -9,11 +9,11 @@ What it builds:
 
 | Resource | Purpose |
 |---|---|
-| `aws_vpc.main` | the private network (CIDR from variable) |
-| `aws_subnet.public` | public subnet in one AZ, auto-assign public IP |
+| `aws_vpc.main` | the private network, `10.20.0.0/16` |
+| `aws_subnet.public` | `10.20.1.0/24`, auto-assign public IP |
 | `aws_internet_gateway.main` | lets the VPC reach the internet |
 | `aws_route_table.public` + association | `0.0.0.0/0 → IGW` for the public subnet |
-| `aws_security_group.web` | HTTP 80 inbound, all outbound |
+| `aws_security_group.web` | HTTP 80 + HTTPS 443 inbound, all outbound |
 
 ```powershell
 terraform fmt -check
@@ -48,7 +48,7 @@ terraform destroy
 ## EC2 extension questions
 
 1. **Subnet?** The public subnet — it has the route to the IGW.
-2. **Security group?** `web` SG (port 80 in).
+2. **Security group?** `web` SG (80/443 in).
 3. **Why IGW route?** Without `0.0.0.0/0 → IGW` the subnet has no path to the internet, so it isn't really public.
 4. **What else for reachability?** A public IP (auto-assign or Elastic IP), SG/NACL allowing the port, and the app listening on it.
 5. **Why not SSH from `0.0.0.0/0`?** Anyone can brute-force port 22. Allow only your IP, or use SSM Session Manager.
