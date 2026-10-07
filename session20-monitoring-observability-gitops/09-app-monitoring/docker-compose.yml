@@ -1,0 +1,31 @@
+services:
+  app:
+    build: ./app
+    container_name: s20-app
+    ports:
+      - "8080:8080"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: s20-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: s20-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      # local lab only: lets you view dashboards without logging in
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus

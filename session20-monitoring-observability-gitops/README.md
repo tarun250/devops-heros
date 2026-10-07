@@ -27,6 +27,46 @@ Dashboard with 4 panels: `sum(up)`, `rate(prometheus_http_requests_total[1m])` b
 
 Data source and dashboard were added through Grafana's HTTP API (same result as clicking through the UI).
 
+## Monitoring a real app (`09-app-monitoring/`)
+
+The labs above only scrape Prometheus itself, so I added a small Flask app that exposes its own metrics with `prometheus_client`:
+
+| Metric | Type | Meaning |
+|---|---|---|
+| `app_requests_total{endpoint,status}` | counter | requests by endpoint and status code |
+| `app_request_duration_seconds` | histogram | latency per endpoint |
+| `app_orders_total` | counter | business metric: orders placed |
+
+`/order` sleeps 10–300 ms and fails ~10% of the time, so latency and errors show up on the graphs.
+
+Prometheus scrapes `app:8080/metrics` every 5s (`prometheus.yml`). Grafana's data source and dashboard are provisioned from files in `grafana/`, so nothing is clicked by hand.
+
+```powershell
+docker compose up -d --build
+docker compose ps
+```
+![compose ps](./screenshots/12-app-compose-ps.png)
+
+```powershell
+curl.exe -s http://localhost:8080/metrics
+```
+![app metrics](./screenshots/13-app-metrics.png)
+
+Both targets UP:
+
+![targets](./screenshots/14-app-prometheus-targets.png)
+
+Dashboard after ~5 min of traffic (Grafana on http://localhost:3001):
+
+![app dashboard](./screenshots/15-app-grafana-dashboard.png)
+
+PromQL used:
+```text
+sum by (endpoint, status) (rate(app_requests_total[1m]))
+histogram_quantile(0.95, sum by (le) (rate(app_request_duration_seconds_bucket{endpoint="/order"}[1m])))
+100 * sum(rate(app_requests_total{status="500"}[1m])) / sum(rate(app_requests_total[1m]))
+```
+
 ## Mini project — GitOps with Argo CD (`08-mini-project/`)
 
 **Install Argo CD**
