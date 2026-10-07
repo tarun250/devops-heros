@@ -204,3 +204,7 @@ Fix: re-apply `service.yaml` with the correct selector, endpoints come back.
 ## Events vs Logs
 
 See [events-logs.md](./events-logs.md).
+
+## 10 — More issues (explain, top, ContainerCreating, config, pod networking) + 6-step summary
+
+See [10-more-issues/README.md](./10-more-issues/README.md).

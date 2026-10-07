@@ -1,0 +1,14 @@
+# App listens on 127.0.0.1 only -> reachable inside the Pod, not from other Pods
+apiVersion: v1
+kind: Pod
+metadata:
+  name: net-app
+  labels:
+    app: net-app
+spec:
+  containers:
+    - name: app
+      image: python:3.12-alpine
+      command: ["python", "-m", "http.server", "8000", "--bind", "127.0.0.1"]
+      ports:
+        - containerPort: 8000

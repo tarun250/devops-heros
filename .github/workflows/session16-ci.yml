@@ -1,4 +1,4 @@
-name: Session 16 - Final CI Pipeline
+name: Session 16 - Final CI/CD Pipeline
 
 on:
   push:
@@ -68,3 +68,56 @@ jobs:
             exit 1
           fi
           echo "No common sensitive files found."
+
+  # ---------------- CD ----------------
+  docker-push:
+    name: CD - Build & Push Image (GHCR)
+    needs: [build, security-check]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR (uses the GITHUB_TOKEN secret)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image (tests run inside the build)
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/session16-calculator:${{ github.sha }} .
+
+      - name: Push image
+        run: docker push ghcr.io/${{ github.repository_owner }}/session16-calculator:${{ github.sha }}
+
+  deploy:
+    name: CD - Deploy & Smoke Test
+    needs: docker-push
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the released image from the registry
+        run: docker pull ghcr.io/${{ github.repository_owner }}/session16-calculator:${{ github.sha }}
+
+      - name: Smoke test the released image
+        run: |
+          docker run -i --rm ghcr.io/${{ github.repository_owner }}/session16-calculator:${{ github.sha }} < sample-input.txt | tee out.txt
+          grep -q "Result: 15.0" out.txt
+          grep -q "Cannot divide by zero" out.txt
+          echo "Deployed image works."

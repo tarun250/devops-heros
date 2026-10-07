@@ -2,6 +2,8 @@
 
 Prometheus + Grafana with Docker Compose, Argo CD on Minikube.
 
+Observability notes (three pillars, why it's needed, tools, Kubernetes observability): **[observability.md](./observability.md)**
+
 ## Prometheus + Grafana (`04-grafana/`)
 
 ```powershell
@@ -66,6 +68,39 @@ sum by (endpoint, status) (rate(app_requests_total[1m]))
 histogram_quantile(0.95, sum by (le) (rate(app_request_duration_seconds_bucket{endpoint="/order"}[1m])))
 100 * sum(rate(app_requests_total{status="500"}[1m])) / sum(rate(app_requests_total[1m]))
 ```
+
+### Logs, alerts, CPU / memory, health
+
+| Homework item | How it's shown |
+|---|---|
+| Metrics | `app_requests_total`, `app_request_duration_seconds`, `app_orders_total` |
+| Logs | app writes one `key=value` line per event (`level=ERROR event=order_failed …`) |
+| Alerts | Prometheus rules in [`alerts.yml`](./09-app-monitoring/alerts.yml): `AppDown`, `HighErrorRate`, `HighLatencyP95`, `HighCPU` |
+| CPU utilization | `rate(process_cpu_seconds_total[1m])` panel + `HighCPU` alert |
+| Memory utilization | `process_resident_memory_bytes` panel |
+| Application health | `/health` endpoint + `up{job="demo-app"}` + `AppDown` alert |
+
+**Alerts** — `HighErrorRate` (error rate per endpoint > 5% for 1 minute) is firing for `/order`, which fails ~10% of the time on purpose:
+
+![alerts firing](./screenshots/16-alerts-firing.png)
+![alert rules](./screenshots/17-alert-rules.png)
+
+My first version divided `/order` errors by *all* requests (including `/`), which sits right at ~5% and kept resetting the 1-minute timer, so it never fired. Grouping `by (endpoint)` fixed it.
+
+**CPU + memory** panels added to the dashboard:
+
+![cpu memory](./screenshots/18-dashboard-cpu-memory.png)
+
+**Logs**
+
+```powershell
+docker compose logs app --tail=12
+```
+![logs](./screenshots/19-app-logs.png)
+
+Counting errors vs successful orders from the logs (last minute) — 13 vs 111, about 10%, matching the metrics:
+
+![log counts](./screenshots/20-logs-errors-only.png)
 
 ## Mini project — GitOps with Argo CD (`08-mini-project/`)
 

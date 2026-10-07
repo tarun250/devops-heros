@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (git-ignored) and change the bucket name.
+# S3 bucket names are global, so it must be unique across all AWS accounts.
+aws_region  = "ap-south-1"
+bucket_name = "tarun250-session18-demo-bucket"

@@ -1,0 +1,14 @@
+# Fixed: listen on all interfaces
+apiVersion: v1
+kind: Pod
+metadata:
+  name: net-app
+  labels:
+    app: net-app
+spec:
+  containers:
+    - name: app
+      image: python:3.12-alpine
+      command: ["python", "-m", "http.server", "8000", "--bind", "0.0.0.0"]
+      ports:
+        - containerPort: 8000

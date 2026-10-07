@@ -2,6 +2,8 @@
 
 Cluster: Minikube (docker driver), metrics-server addon enabled.
 
+Task 1 notes (emptyDir, hostPath, PV, PVC, StorageClass, dynamic provisioning): [01-kubernetes-volumes/README.md](./01-kubernetes-volumes/README.md)
+
 ---
 
 ## 1. emptyDir — storage dies with the Pod

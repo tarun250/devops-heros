@@ -127,6 +127,60 @@
         },
         "overrides": []
       }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU utilization (% of one core)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total{job=\"demo-app\"}[1m])",
+          "legendFormat": "demo-app CPU"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory utilization (resident)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{job=\"demo-app\"}",
+          "legendFormat": "demo-app RSS"
+        }
+      ]
     }
   ]
 }

@@ -17,7 +17,7 @@ GitHub only runs workflows from the repo root `.github/workflows/`, so the workf
 | Job | group of steps on one runner; jobs run in parallel unless `needs:` | `test` → `build` + `security-check` in parallel |
 | Step | one command (`run:`) or action (`uses:`) | checkout, setup-python, pytest |
 | Runner | the machine that runs a job | GitHub-hosted `ubuntu-latest` (self-hosted is possible) |
-| Secret | encrypted value, injected as `${{ secrets.NAME }}`, masked as `***` in logs | session 17 uses the built-in `GITHUB_TOKEN` to push to GHCR |
+| Secret | encrypted value, injected as `${{ secrets.NAME }}`, masked as `***` in logs | `secrets.GITHUB_TOKEN` logs in to GHCR in both CD jobs |
 | Artifact | file kept after the run | `calculator-build` (the `build/` folder) |
 
 ## Pipeline
@@ -27,6 +27,8 @@ GitHub only runs workflows from the repo root `.github/workflows/`, so the workf
 | Test Application | – | setup Python 3.12, `pip install`, `pytest -v` |
 | Build Application | test | `build.sh`, upload `build/` as artifact `calculator-build` |
 | Security Check | test | fails if `.env`, `*.pem`, `*.key` files are committed |
+| **CD** – Build & Push Image | build, security-check | `docker build` (tests run inside the build), push `ghcr.io/tarun250/session16-calculator:<sha>`; logs in with the `GITHUB_TOKEN` secret |
+| **CD** – Deploy & Smoke Test | docker-push | `environment: dev`; pulls the released image from GHCR, runs it with `sample-input.txt`, checks the results |
 
 Triggers: push to `main` (only when session 16 files or the workflow change), pull requests, `workflow_dispatch` (manual run button).
 
@@ -41,6 +43,24 @@ pytest -v
 bash build.sh
 ```
 ![local build](./screenshots/02-local-build.png)
+
+## Dockerfile + CD
+
+[`Dockerfile`](./session-16-github-actions/10-final-cicd-pipeline/Dockerfile): `python:3.12-slim`, runs `pytest` during the build (a failing test means no image), non-root user, starts the calculator.
+
+```powershell
+docker build -t session16-calculator:local .
+```
+![docker build](./screenshots/09-docker-build.png)
+
+The app is an interactive CLI, so the smoke test pipes input in ([`sample-input.txt`](./session-16-github-actions/10-final-cicd-pipeline/sample-input.txt)):
+
+```powershell
+cmd /c 'docker run -i --rm session16-calculator:local < sample-input.txt'
+```
+![docker run](./screenshots/10-docker-run.png)
+
+CI = test + build + security check. CD = build the image, push it to GHCR tagged with the commit SHA, then a deploy job (GitHub environment `dev`) pulls that exact image from the registry and smoke-tests it.
 
 ## GitHub Actions run
 

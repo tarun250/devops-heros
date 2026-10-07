@@ -3,6 +3,13 @@
 > No AWS account/credentials on this machine (AWS CLI not installed), so `plan` / `apply` / `destroy` were **not** run.
 > All Terraform code is formatted, initialised and validated.
 
+## End-to-end project — VPC + Subnet + SG + EC2 + S3 (`09-cloud-infra-project/`)
+
+The homework's suggested architecture, with an architecture diagram, dependencies and state explained:
+**[09-cloud-infra-project/README.md](./09-cloud-infra-project/README.md)**
+
+![validate](./screenshots/06-project-validate.png)
+
 ## Mini project — VPC with Terraform (`08-mini-project/`)
 
 What it builds:
