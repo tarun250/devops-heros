@@ -1,7 +1,7 @@
 # Session 16 — CI/CD & GitHub Actions (Submission)
 
 Pipeline: [`.github/workflows/session16-ci.yml`](../.github/workflows/session16-ci.yml)
-App: `session-16-github-actions/10-final-cicd-pipeline` (calculator + pytest)
+App: `session-16-github-actions/session-16-github-actions/10-final-cicd-pipeline` (calculator + pytest)
 
 GitHub only runs workflows from the repo root `.github/workflows/`, so the workflow lives there and uses `working-directory` to point at the session folder.
 
