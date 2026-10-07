@@ -2,8 +2,7 @@
 
 Terraform v1.16.2, AWS provider `~> 6.0`, Windows / PowerShell.
 
-> No AWS account/credentials on this machine, so `terraform plan` / `apply` were **not** run.
-> All configs are formatted, initialised and validated.
+> No AWS account, so the full workflow (plan → apply → show → output → destroy) was run against a local AWS mock (Moto). Details below.
 
 ## Terraform CLI
 
@@ -35,13 +34,57 @@ terraform providers
 ```
 ![validate](./screenshots/03-s3-validate.png)
 
-To actually create it (needs `aws configure` first) — **not run: no AWS credentials**:
+## Full workflow: plan → apply → show → output → destroy
+
+> **No AWS account**, so this ran against **[Moto](https://github.com/getmoto/moto)** — an open-source AWS mock server in Docker that implements the real S3 API. Terraform, the AWS provider and every command are real; only the endpoint is local. With an AWS account the only change is deleting the override file below and running `aws configure`.
+
+The Moto server, plus a **local, git-ignored** `provider_override.tf` that points the provider at it (dummy credentials, Moto accepts anything), and `terraform.tfvars`:
+
+```hcl
+provider "aws" {
+  access_key                  = "test"
+  secret_key                  = "test"
+  s3_use_path_style           = true
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  endpoints {
+    s3 = "http://localhost:5000"
+  }
+}
+```
+![mock target](./screenshots/05-mock-target.png)
+
+**terraform init**
+![init](./screenshots/06-init.png)
+
+**terraform fmt / validate**
+![fmt validate](./screenshots/07-fmt-validate.png)
+
+**terraform plan** — 1 to add
+![plan](./screenshots/08-plan.png)
+
+**terraform apply**
+![apply](./screenshots/09-apply.png)
+
+**terraform show** — what's now in state
+![show](./screenshots/10-show.png)
+
+**terraform output** + `state list` + the bucket listed by the S3 API
+![output](./screenshots/11-output.png)
+
+**terraform destroy**
+![destroy](./screenshots/12-destroy.png)
+
+After destroy: state empty, no outputs, 0 buckets.
+![after destroy](./screenshots/13-after-destroy.png)
+
+On real AWS (same commands, no override file):
 ```powershell
-copy terraform.tfvars.example terraform.tfvars   # set a unique bucket_name
-terraform plan
-terraform apply
-terraform show
-terraform output
+aws configure
+copy terraform.tfvars.example terraform.tfvars   # bucket_name must be globally unique
+terraform init; terraform plan -out=tfplan; terraform apply tfplan
+terraform show; terraform output
 terraform destroy
 ```
 

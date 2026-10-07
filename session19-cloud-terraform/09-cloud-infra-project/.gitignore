@@ -4,3 +4,5 @@
 *.tfplan
 crash.log
 terraform.tfvars
+*_override.tf
+tfplan

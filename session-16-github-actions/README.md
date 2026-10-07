@@ -68,6 +68,12 @@ Run: https://github.com/tarun250/devops-heros/actions/runs/37621643045 — all 3
 
 ![actions run](./screenshots/03-actions-run.png)
 
+**Full CI/CD run** (after adding the Dockerfile and CD jobs): Test → Build + Security Check → CD Build & Push Image (GHCR) → CD Deploy & Smoke Test. Status: Success.
+
+Run: https://github.com/tarun250/devops-heros/actions/runs/37642903011
+
+![ci/cd run](./screenshots/11-cicd-run.png)
+
 ## Failed run → fix → re-run
 
 Broke `add()` on purpose (`a + b` → `a - b`) and pushed. `Test Application` failed, so `Build` and `Security Check` were skipped (they `need` test). Nothing broken got built.

@@ -1,11 +1,10 @@
 # Session 19 — Cloud & Terraform in Action (Submission)
 
-> No AWS account/credentials on this machine (AWS CLI not installed), so `plan` / `apply` / `destroy` were **not** run.
-> All Terraform code is formatted, initialised and validated.
+> No AWS account. The main project (`09-cloud-infra-project`) ran the full `plan` → `apply` → `destroy` workflow against a local AWS mock (Moto) — see its README. The other folders are formatted, initialised and validated.
 
 ## End-to-end project — VPC + Subnet + SG + EC2 + S3 (`09-cloud-infra-project/`)
 
-The homework's suggested architecture, with an architecture diagram, dependencies and state explained:
+The homework's suggested architecture, with an architecture diagram, dependencies, state, and a full plan → apply → destroy run (local AWS mock):
 **[09-cloud-infra-project/README.md](./09-cloud-infra-project/README.md)**
 
 ![validate](./screenshots/06-project-validate.png)
